@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:jiji_parking/controllers/bill_controller.dart';
@@ -27,10 +28,8 @@ class _BillingPageState extends State<BillingPage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Billing Page"),
@@ -51,7 +50,9 @@ class _BillingPageState extends State<BillingPage> {
                 ),
               ],
             ),
-            SizedBox(height: MediaQuery.of(context).size.height / 3 - 50,),
+            SizedBox(
+              height: MediaQuery.of(context).size.height / 3 - 50,
+            ),
             Row(
               children: [
                 Text(
@@ -59,21 +60,19 @@ class _BillingPageState extends State<BillingPage> {
                   style: TextStyle(fontSize: 28),
                 ),
                 Text(
-                  billController.charges(isTimerRunning ? DateTime.now() : stopTime).toString(),
+                  billController
+                      .charges(isTimerRunning ? DateTime.now() : stopTime)
+                      .toString(),
                   style: TextStyle(fontSize: 28),
                 ),
               ],
             ),
-            SizedBox(height: 32,),
+            SizedBox(
+              height: 32,
+            ),
             RaisedButton(
               color: Colors.red,
-              onPressed: () {
-                if(isTimerRunning) {
-                  isTimerRunning = false;
-                  stopTime = DateTime.now();
-                  myTimer.cancel();
-                }
-              },
+              onPressed: endSession,
               child: Text(
                 "End Session",
                 style: TextStyle(
@@ -81,12 +80,16 @@ class _BillingPageState extends State<BillingPage> {
                 ),
               ),
             ),
-            SizedBox(height: 32,),
+            SizedBox(
+              height: 32,
+            ),
             RaisedButton(
               color: Colors.green,
-              onPressed: isTimerRunning ? null : () {
-                Get.offAll(HomePage());
-              },
+              onPressed: isTimerRunning
+                  ? null
+                  : () {
+                      Get.offAll(HomePage());
+                    },
               child: Text(
                 "Home Page",
                 style: TextStyle(
@@ -99,12 +102,31 @@ class _BillingPageState extends State<BillingPage> {
       ),
     );
   }
-  
+
   String displayRemainingTime(Duration d) {
     String hours = d.inHours.toString().padLeft(2);
     String minutes = d.inMinutes.remainder(60).toString().padLeft(2);
     String seconds = d.inSeconds.remainder(60).toString().padLeft(2);
-    
+
     return "$hours:$minutes:$seconds";
+  }
+
+  void endSession() {
+    if (isTimerRunning) {
+      setState(() {
+        isTimerRunning = false;
+      });
+      stopTime = DateTime.now();
+      myTimer.cancel();
+    }
+
+    ParkingSlot parkingSlot = Get.find();
+    DatabaseReference reference =
+        FirebaseDatabase().reference().child(parkingSlot.title);
+    reference.set("available").then((value) => Get.snackbar(
+          "Success",
+          "Ended session successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        ));
   }
 }
